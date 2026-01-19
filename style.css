@@ -19,6 +19,10 @@ html {
   font-size: 10px;
 }
 
+body {
+  background-color: #fff;
+}
+
 .wrapper {
   max-width: 680px;
   width: 100%;
@@ -29,7 +33,7 @@ html {
 .wrapper section {
   width: 100%;
   height: auto;
-  margin-top: 8rem;
+  margin-top: 6rem;
   padding: 2rem 4rem;
 }
 
