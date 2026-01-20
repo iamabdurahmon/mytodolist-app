@@ -1,98 +1,80 @@
 document.addEventListener("DOMContentLoaded", () => {
   const taskInput = document.querySelector(".task-add input");
   const addBtn = document.querySelector(".add-btn");
-  const noTaskImg = document.querySelector(".no-task");
+  const taskContainer = document.querySelector(".task-list-container");
   const taskCountSpan = document.querySelector(".task-count");
 
   let todos = JSON.parse(localStorage.getItem("todo-list")) || [];
-  let editId;
-  let isEditTask = false;
+  let editId = null;
 
-  function showTasks() {
-    document.querySelectorAll(".task-card").forEach((card) => card.remove());
+  function renderTasks() {
+    let taskHtml = "";
+    todos.forEach((todo, index) => {
+      let isDone = todo.status === "completed";
+      taskHtml += `
+        <div class="task-card">
+          <div class="card">
+            <input type="checkbox" ${isDone ? "checked" : ""} onchange="toggleTask(${index})">
+            <h1 style="${isDone ? "text-decoration: line-through; opacity: 0.6;" : ""}">${todo.name}</h1>
+          </div>
+          <div class="task-edit">
+            <button onclick="editTask(${index})">✏️</button>
+            <button onclick="deleteTask(${index})">❌</button>
+          </div>
+        </div>`;
+    });
 
-    if (todos.length === 0) {
-      if (noTaskImg) noTaskImg.style.display = "block";
+    taskContainer.innerHTML = taskHtml || "<p>No tasks yet</p>";
+    updateStats();
+  }
+
+  addBtn.onclick = () => {
+    let val = taskInput.value.trim();
+    if (!val) return;
+
+    if (editId === null) {
+      todos.push({ name: val, status: "pending" });
     } else {
-      if (noTaskImg) noTaskImg.style.display = "none";
-      todos.forEach((todo, id) => {
-        let isCompleted = todo.status === "completed" ? "checked" : "";
-        let textStyle =
-          todo.status === "completed"
-            ? "text-decoration: line-through; opacity: 0.6;"
-            : "";
-
-        let taskHtml = `
-          <div class="task-card" id="task-${id}">
-            <div class="card">
-              <input type="checkbox" ${isCompleted} class="status-cb" data-id="${id}">
-              <h1 class="task-text" style="${textStyle}">${todo.name}</h1>
-            </div>
-            <div class="task-edit">
-              <span class="edit-btn" data-id="${id}"><i class="ri-pencil-ai-2-line"></i></span>
-              <span class="delete-btn" data-id="${id}"><i class="ri-close-circle-line"></i></span>
-            </div>
-          </div>`;
-        if (noTaskImg) noTaskImg.insertAdjacentHTML("beforebegin", taskHtml);
-      });
+      todos[editId].name = val;
+      editId = null;
+      addBtn.textContent = "+";
     }
-    attachEvents();
-    updateCount();
-  }
 
-  function attachEvents() {
-    document.querySelectorAll(".status-cb").forEach((cb) => {
-      cb.onclick = (e) => {
-        todos[e.target.dataset.id].status = e.target.checked
-          ? "completed"
-          : "pending";
-        saveData();
-      };
-    });
-    document.querySelectorAll(".delete-btn").forEach((btn) => {
-      btn.onclick = () => {
-        todos.splice(btn.dataset.id, 1);
-        saveData();
-      };
-    });
-    document.querySelectorAll(".edit-btn").forEach((btn) => {
-      btn.onclick = () => {
-        editId = btn.dataset.id;
-        isEditTask = true;
-        taskInput.value = todos[editId].name;
-        taskInput.focus();
-        addBtn.innerHTML = '<i class="ri-check-line"></i>';
-      };
-    });
-  }
+    taskInput.value = "";
+    saveAndRefresh();
+  };
 
-  function saveData() {
+  window.deleteTask = (id) => {
+    todos.splice(id, 1);
+    saveAndRefresh();
+  };
+
+  window.toggleTask = (id) => {
+    todos[id].status =
+      todos[id].status === "completed" ? "pending" : "completed";
+    saveAndRefresh();
+  };
+
+  window.editTask = (id) => {
+    editId = id;
+    taskInput.value = todos[id].name;
+    taskInput.focus();
+    addBtn.textContent = "✓";
+  };
+
+  function saveAndRefresh() {
     localStorage.setItem("todo-list", JSON.stringify(todos));
-    showTasks();
+    renderTasks();
   }
 
-  addBtn.addEventListener("click", () => {
-    let userTask = taskInput.value.trim();
-    if (userTask) {
-      if (!isEditTask) {
-        todos.push({ name: userTask, status: "pending" });
-      } else {
-        todos[editId].name = userTask;
-        isEditTask = false;
-        addBtn.innerHTML = '<i class="ri-add-large-line"></i>';
-      }
-      taskInput.value = "";
-      saveData();
-    }
-  });
-
-  function updateCount() {
+  function updateStats() {
     let pending = todos.filter((t) => t.status === "pending").length;
     if (taskCountSpan) taskCountSpan.textContent = pending;
   }
 
-  taskInput.addEventListener("keyup", (e) => {
+  taskInput.onkeyup = (e) => {
     if (e.key === "Enter") addBtn.click();
-  });
-  showTasks();
+  };
+
+  renderTasks();
 });
