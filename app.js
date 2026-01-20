@@ -40,7 +40,6 @@ function showTasks() {
   updateCount();
 }
 
-// 3. Qo'shish va Saqlash
 addBtn.addEventListener("click", () => {
   let userTask = taskInput.value.trim();
   if (userTask) {
